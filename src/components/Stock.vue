@@ -1,5 +1,8 @@
 <template>
   <div>
+      <div>
+          <h3 style="color:red"> Total : 220</h3>
+      </div>
       <table class="table table-hover">
         <thead>
             <tr>
@@ -36,13 +39,47 @@
             <template v-for="gaz in gazs" :key="gaz.id" >
                 <td v-if="gaz.nomStationGaz === fournisseur.nomStation && gaz.etat === 'vide' && gaz.type === 'B6'">{{ vB6 = gaz.quantite }}</td>
             </template>
+                <td >{{ TB12 = rB12+vB12 }}</td>
+                <td>{{ TB6 = rB6+vB6  }}</td>
+            </tr>
+        </tbody>
+    </table>
+    <table class="table table-hover mt-5">
+        <thead>
+            <tr>
+                <th scope="col" colspan="6" class="text-center">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr  
+            class="table-primary"
+            v-for="fournisseur in fournisseurs"
+            :key="fournisseur.id"
+            >
+            <th scope="row">{{fournisseur.nomStation}}</th>
+                <template v-for="gaz in gazs" :key="gaz.id" >
+                    <td v-if="gaz.nomStationGaz === fournisseur.nomStation ">{{ gaz.quantite }}</td>
+                </template>
                 <td >{{ rB12+vB12 }}</td>
                 <td>{{ rB6+vB6  }}</td>
             </tr>
+            <tr class="table-primary">
+            <th scope="row">B12</th>
+                <td scope="rox"></td>
+            </tr>
+            <tr class="table-primary">
+            <th scope="row">B6</th>
+                <td scope="rox"></td>
+            </tr>
+            <tr class="table-primary">
+            <th scope="row">Vides</th>
+                <td scope="rox"></td>
+            </tr>
+            <tr class="table-primary">
+            <th scope="row">Rempli</th>
+                <td scope="rox"></td>
+            </tr>
         </tbody>
-        <div class="container">
-            
-        </div>
     </table>
   </div>
 </template>
@@ -55,7 +92,8 @@ export default {
     data(){
         return{
             fournisseurs : [],
-            gazs :[]
+            gazs :[],
+            som:0
 
         }
     },
