@@ -1,5 +1,14 @@
 <template>
-  <div>
+  <div class="container">
+    <div class="form-group">
+    <label class="form-label mt-4">Recherche</label>
+    <div class="form-group">
+        <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="Station" aria-label="Recipient's username" aria-describedby="button-addon2" v-model="valueRecherche" @keyup="recherche">
+        <button class="btn btn-primary" type="button" id="button-addon2">Recherche</button>
+        </div>
+    </div>
+    </div>
     <table class="table table-hover mt-4">
     <thead>
         <tr>
@@ -13,6 +22,7 @@
         </tr>
     </thead>
     <tbody>
+        <p v-if="paginatedFournisseur.length == 0">chargement...</p>
         <tr 
         class="table-primary"
         v-for ="fournisseur in paginatedFournisseur"
@@ -28,7 +38,7 @@
     </tbody>
     </table>
     <div>
-        <ul class="pagination pagination-sm">
+        <ul class="pagination pagination-sm" v-if="pageValue == true">
             <li 
             class="page-item"
             :class="{ disabled : currentPage == 1 }">
@@ -81,7 +91,11 @@ export default {
                 currentPage : 1,
                 pageCount : 0,
                 paginatedFournisseur : [],
-                reload : false
+                reload : false,
+                valueRecherche : "",
+                pageValue : true,
+                filteredFournisseurs : [],
+                faireRecherche :true
             }
         },
         methods : {
@@ -109,12 +123,18 @@ export default {
                 this.maj = false;
 
             },
-            async changerPage(page){
+            async changerPage(page){             
                 this.currentPage = page;
                 const start = this.currentPage * this.itemsPerPage - this.itemsPerPage; 
+                if(this.valueRecherche){
+                this.paginatedFournisseur = this.filteredFournisseurs.slice(start , start + this.itemsPerPage);
+                }else{
                 this.paginatedFournisseur = this.fournisseurs.slice(start , start + this.itemsPerPage);
+                }
             },
             async actualisation(){
+                    this.pageValue = true;
+                this.vide();
                 await axios
                 .get('http://localhost:8000/api/fournisseurs')
                 .then(response =>{
@@ -123,10 +143,7 @@ export default {
                     }
                 })
              await this.changerPage(this.currentPage);
-             this.pageCount = Math.ceil(this.fournisseurs.length / this.itemsPerPage);
-                for(let i = 1;i <= this.pageCount;i++){
-                    this.pages.push(i);
-                }
+             await this.chargerPage(this.fournisseurs);
                 //Retour à la page précédente si tous les fournisseurs d'une page sont sup
                 if(this.reload == true && this.paginatedFournisseur.length == 0 )
                 {
@@ -135,15 +152,62 @@ export default {
                 //Retour à la dernière page si on ajoute un fournisseur
                 if(this.reload == true && this.maj == false )
                 {
-                    await this.changerPage(this.pageCount);
+                    if(this.valueRecherche)
+                    {
+                        this.valueRecherche="";
+                        this.actualisation();
+                    }
+                    this.changerPage(this.pageCount);
                 }
             },
             onReload(){
-                this.fournisseurs = [];
-                this.paginatedFournisseur = [];
-                this.pages = [];
                 this.reload = true;
                 this.actualisation();
+            },
+          async recherche(){
+            if (this.valueRecherche) {
+                this.faireRecherche=true;
+                this.pages=[];
+                const start = this.currentPage * this.itemsPerPage - this.itemsPerPage; 
+
+
+               this.filteredFournisseurs = this.fournisseurs.filter(fournisseur => 
+                fournisseur.nomStation.toLowerCase().includes(this.valueRecherche.toLowerCase()) ||
+                fournisseur.nomFournisseur.toLowerCase().includes(this.valueRecherche.toLowerCase()))
+                if(this.filteredFournisseurs.length<this.itemsPerPage)
+                {
+                    this.pageValue = false;
+                }else
+                {
+                    this.pageValue = true;
+                }
+                this.paginatedFournisseur = this.filteredFournisseurs.slice(start , start + this.itemsPerPage);
+                 this.pageCount = Math.ceil(this.filteredFournisseurs.length / this.itemsPerPage);
+                for(let i = 1;i <= this.pageCount;i++){
+                    this.pages.push(i);
+                }
+                await this.changerPage(1);
+                } else
+                {
+                    if(this.faireRecherche == true)
+                    {
+                    this.faireRecherche=false;
+                    await this.actualisation();
+                    }
+                }
+            },
+            vide()
+            {
+                    this.fournisseurs = [];
+                    this.paginatedFournisseur = [];
+                    this.pages = [];
+            },
+            async chargerPage(fournisseurs)
+            {
+                this.pageCount = Math.ceil(fournisseurs.length / this.itemsPerPage);
+                for(let i = 1;i <= this.pageCount;i++){
+                    this.pages.push(i);
+                }
             }
         },
        async mounted(){
